@@ -1,0 +1,243 @@
+---
+title: "Compas dataset analysis"
+
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## IS COMPAS FAIR??
+
+
+### 1)
+```{r}
+
+library(tidyverse)
+maindata<-read.csv("./data/compas-score-data.csv.bz2",sep="\t")
+
+dim(maindata)
+head(maindata)
+
+sum(is.na(maindata))
+```
+sanity check- the dataset seems to have all valid columns with proper data and no missing or implausible values.
+
+
+
+### 2)
+```{r}
+compas<- filter(maindata,race %in% c('African-American','Caucasian'))
+dim(compas)
+head(compas)
+```
+
+### 3)
+```{r}
+compas$risk_level<-ifelse(compas$decile_score <=4,'low risk', 'high risk')
+head(compas)
+
+```
+
+
+### 4)a
+```{r}
+
+t1=table(compas$risk_level)
+prop.table(t1)
+
+```
+Recidivism rate for high risk is 47.84% and for low risk is 52.16%.
+
+
+### 4)b)
+```{r}
+t2=table(compas$risk_level,compas$race)
+prop.table(t2)*100
+```
+
+
+### 5)
+
+```{r}
+CM1=table(compas$two_year_recid,compas$risk_level)[2:1,]
+CM1
+prop.table(CM1)
+```
+COMPAS correctly classified 30.35% of recidivated individuals as high risk.16.69% were wrongly classified as low risk but were recidivated.17.48% were incorrectly classified as high risk but were not recidivated and lastly 35.46 % of individuals were accurately classified as low risk and those individuals were not recidivated.
+
+
+### 6)
+```{r}
+accuracy=(1602+1872)/(1602+881+923+1872)
+accuracy
+
+
+error=(881+923)/(1602+881+923+1872)
+error
+
+
+precision=(1602)/(1602+923)
+precision
+
+recall=(1602)/(1602+881)
+recall
+
+
+fpr=(923)/(923+1872)
+fpr
+
+fnr=(881)/(881+1602)
+fnr
+```
+The accuracy of the compas classification is 65.82% which means out of the total number of individuals close to 65.82% were classified correctly. The error rate/misclassification is 34.17. Precision tells that out of all that are classified as high risk 63.45% are actually recidivated. Recall tells that 64.51 % of total relevant results i.e redicivated individuals were correctly classified by the compas.
+The false positive rate is 33% which means compas predicts positive/high risk for an actual negative/not redicivated and false negative rate is 35.48% which means it wrongly classifies negative/low risk for actual positive/recidivated.
+I would not feel comfortable if a judge uses COMPAS with 65% accuracy for sentencing.If the algorithm had higher accuracy with lower error the confidence to use the algorithm would improve along with using human intelligence for sentencing.
+
+
+
+### 7)
+```{r}
+t3=table(compas$two_year_recid,compas$risk_level,compas$race)[2:1,,]
+prop.table(t3)
+```
+### 7)a)
+```{r}
+
+accuracy_AA=(1188+873)/(641+873+1188+473)
+accuracy_AA
+
+accuracy_C=(414+999)/(282+999+414+408)
+accuracy_C
+```
+
+
+### 7)b
+ FPR=FP/N=FP/(FP+TN)
+```{r}
+
+fpr_AA=(641)/(641+873)
+fpr_AA
+
+
+fpr_C=(282)/(282+999)
+fpr_C
+```
+
+
+### 7)c)
+FNR=FN/P=FN/(FN+TP)
+```{r}
+
+fnr_AA=473/(473+1188)
+fnr_AA
+
+fnr_C=408/(408+414)
+fnr_C
+```
+
+
+### 8)
+```{r}
+
+tpr_aa=1188/(1188+473)
+tpr_aa
+
+tpr_c=414/(414+408)
+tpr_c
+
+tnr_aa=873/(873+641)
+tnr_aa
+
+tnr_c=999/(999+282)
+tnr_c
+```
+In my opinion for a fair model the accuracy should be higher and error should be lower also equal number of samples should be taken into consideration, in dataset number of african-americans are almost thousand more than caucasians. 
+False positive rate refers to values that are negative but predicted positive. The Fpr for african american is twice that of caucasian. False negative rate refers to values that are positive but predicted to be negative . The FNR for Caucasian is twice that of african american.
+The concept of group fairness is defined as' . requirement that similar groups of people, here defined by race, should be treated similarly'(as mentioned in lecture notes) will introduces bias. When machines are made to predict without the component of race, ideally they should be unbiased and fair however through the various articles referenced in the assignment for reading, studies showed that Compas does not perform significantly better than human nonexperts. Compas with its 137 features should ideally perform better to be held as accurate and fair. 
+
+
+
+### 2)MAKE YOUR OWN COMPAS
+
+### 1)
+### two_year_recid tells us whether an individual is recidivated in 2 years or not, score_text tells whether the individual has a low or a high risk of recidivism and decile-score is compas classification of each individual's risk of recidivism. As we are building a model to decide which factors affect recidivism and which variable influence the recidivism rate and by how much, these prior analysis results will hamper our individual analysis to create an unbiased model.
+
+### 2) 
+### Accuracy can be a broad and general measure for performance measure for the task, it is the number all correct predictions.Recall answers the question of what proportion of actual positives were identified/predicted correctly whereas precision answers what portion of positive predictions were actually correct.We want our model to predict as correctly as possible. high precision and high recall are difficult to have in the same model. In order to incorporate these both F1 score can also be used which is the harmonic mean of precision and recall.
+
+
+### 3)
+```{r}
+library(caTools)
+
+
+compas$prior_categ=cut(compas$priors_count,breaks=c(-1,0.9,9.9,19.9,29.9,40),labels=c("0","1-10","10-20","20-30","30-40"))
+
+
+#splitting data into train and test
+sample=sample.split(compas,SplitRatio=0.7)
+
+train_data=subset(compas,sample==TRUE)
+dim(train_data)
+test_data=subset(compas,sample==FALSE)
+dim(test_data)
+
+
+#model
+
+model<-glm(two_year_recid~age_cat+c_charge_degree+factor(prior_categ),data=train_data,family=binomial())
+summary(model)
+
+
+model_predict<-predict(model,newdata=test_data,type="response") > 0.5
+
+
+table(test_data$two_year_recid,model_predict)[2:1,2:1]
+
+Metrics::accuracy(test_data$two_year_recid,model_predict)
+```
+The model built on training data shows that almost all explanatory variables are statistically significant except for the that prior_category group of 30-40 crimes.the accuracy of the model is 65%.
+
+
+### 4)
+```{r}
+
+model_2<-glm(two_year_recid~age_cat+c_charge_degree+factor(prior_categ)+sex,data=train_data,family=binomial())
+summary(model_2)
+
+model_predict_2<-predict(model_2,newdata=test_data,type="response") > 0.5
+
+
+table(test_data$two_year_recid,model_predict_2)[2:1,2:1]
+
+Metrics::accuracy(test_data$two_year_recid,model_predict_2)
+```
+After adding the variable of sex into the model, the accuracy does not change significantly.
+
+### 5)
+```{r}
+model_3<-glm(two_year_recid~age_cat+c_charge_degree+factor(prior_categ)+sex+race,data=train_data,family=binomial())
+summary(model_3)
+
+model_predict_3<-predict(model_3,newdata=test_data,type="response") > 0.5
+
+table(test_data$two_year_recid,model_predict_3)[2:1,2:1]
+
+Metrics::accuracy(test_data$two_year_recid,model_predict_3)
+```
+addition of race to the model does not improve the accuracy of model very significantly. 
+
+
+### 6)
+### When the model did not include sex and race the accuracy of the model was in the range of 65% after adding sex and then later race the model's performance measured by accuracy did not significantly improve that much. The accuracy of this model is nearly as good as that of compas(65%) but compas has taken more features into consideration whereas we worked on a model with fewer features hence in that sense our model did perform good.Gender and race do no significantly help to improve the performance, this could be as the sample is randomized. 
+### there are many factors which affect accuracy of the model, judges should be mindful about the biasness in the model. Having access to such model can be helpful in broad studies of groups however judges while making decisions for sentencing should not use such models as individual can be wrongly penalised/punished.
+
+
+#### spent total of 15 hours on the assignment
+
+#### collaborator: Ritika Rajpal
