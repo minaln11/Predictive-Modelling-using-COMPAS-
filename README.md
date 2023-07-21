@@ -1,0 +1,3 @@
+# Predictive-Modelling-using-COMPAS-
+
+Delving deeper into the COMPAS algorithm, a risk assessment tool used to predict recidivism of criminal defendants. Exploring the fairness and performance of COMPAS algorithm using subset of dataset. We understand the predictive accuracy by constructing a confusion matrix and interpreting the results and explore the model's accuracy and distribution of errors. To understand the impact of gender and race we create our own COMPAS-like model without using gender and race as variables - split the data into tarining and validation, develop the model and assess its performance (Later we add gender and race to the model to determie its impact). Finally, the implications of using such models and ethical considerations are discussed.
