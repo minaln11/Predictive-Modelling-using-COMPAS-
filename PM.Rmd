@@ -236,8 +236,3 @@ addition of race to the model does not improve the accuracy of model very signif
 ### 6)
 ### When the model did not include sex and race the accuracy of the model was in the range of 65% after adding sex and then later race the model's performance measured by accuracy did not significantly improve that much. The accuracy of this model is nearly as good as that of compas(65%) but compas has taken more features into consideration whereas we worked on a model with fewer features hence in that sense our model did perform good.Gender and race do no significantly help to improve the performance, this could be as the sample is randomized. 
 ### there are many factors which affect accuracy of the model, judges should be mindful about the biasness in the model. Having access to such model can be helpful in broad studies of groups however judges while making decisions for sentencing should not use such models as individual can be wrongly penalised/punished.
-
-
-#### spent total of 15 hours on the assignment
-
-#### collaborator: Ritika Rajpal
